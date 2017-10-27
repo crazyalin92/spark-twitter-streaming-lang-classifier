@@ -7,7 +7,14 @@ import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
 
 object SparkTwitterStreaming {
+
   def main(args: Array[String]): Unit = {
+
+    System.setProperty("hadoop.home.dir", "F:\\HADOOP");
+
+    // Configure your Twitter credentials
+    TwitterStream.InitializeTwitterStream()
+
 
     val conf = new SparkConf()
     conf.setAppName("spark-sreaming")
@@ -16,22 +23,16 @@ object SparkTwitterStreaming {
 
     val ssc = new StreamingContext(sc, Seconds(1))
 
-    // Configure your Twitter credentials
-    val apiKey = "xxxx"
-    val apiSecret = "xxx"
-    val accessToken = "xxx"
-    val accessTokenSecret = "xxx"
 
-    System.setProperty("twitter4j.oauth.consumerKey", apiKey)
-    System.setProperty("twitter4j.oauth.consumerSecret", apiSecret)
-    System.setProperty("twitter4j.oauth.accessToken", accessToken)
-    System.setProperty("twitter4j.oauth.accessTokenSecret", accessTokenSecret)
-    
     // Create Twitter Stream
     val stream = TwitterUtils.createStream(ssc, None)
     val tweets = stream.map(t => t.getText)
-
     tweets.print()
+
+    tweets.saveAsTextFiles("F:\\data")
+    //get hashtag
+    val hashtags = tweets.flatMap(s => s.split(" ")).filter(w => w.startsWith("#"))
+    hashtags.print()
 
     ssc.start()
     ssc.awaitTermination()
